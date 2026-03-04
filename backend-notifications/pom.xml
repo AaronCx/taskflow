@@ -12,10 +12,10 @@
     </parent>
 
     <groupId>com.portfolio</groupId>
-    <artifactId>task-manager</artifactId>
+    <artifactId>notifications-service</artifactId>
     <version>1.0.0</version>
-    <name>task-manager</name>
-    <description>Portfolio Task Management API — Spring Boot 3 + JWT + PostgreSQL</description>
+    <name>notifications-service</name>
+    <description>Kafka-driven notification microservice — consumes task events and stores notifications</description>
 
     <properties>
         <java.version>17</java.version>
@@ -40,7 +40,7 @@
             <artifactId>spring-boot-starter-security</artifactId>
         </dependency>
 
-        <!-- ── JWT (jjwt 0.11.5) ─────────────────────────────────────── -->
+        <!-- ── JWT ───────────────────────────────────────────────────── -->
         <dependency>
             <groupId>io.jsonwebtoken</groupId>
             <artifactId>jjwt-api</artifactId>
@@ -70,17 +70,17 @@
             <scope>runtime</scope>
         </dependency>
 
+        <!-- ── Kafka Consumer ────────────────────────────────────────── -->
+        <dependency>
+            <groupId>org.springframework.kafka</groupId>
+            <artifactId>spring-kafka</artifactId>
+        </dependency>
+
         <!-- ── OpenAPI / Swagger UI ───────────────────────────────────── -->
         <dependency>
             <groupId>org.springdoc</groupId>
             <artifactId>springdoc-openapi-starter-webmvc-ui</artifactId>
             <version>${springdoc.version}</version>
-        </dependency>
-
-        <!-- ── Kafka ─────────────────────────────────────────────────── -->
-        <dependency>
-            <groupId>org.springframework.kafka</groupId>
-            <artifactId>spring-kafka</artifactId>
         </dependency>
 
         <!-- ── Utilities ─────────────────────────────────────────────── -->
@@ -97,8 +97,8 @@
             <scope>test</scope>
         </dependency>
         <dependency>
-            <groupId>org.springframework.security</groupId>
-            <artifactId>spring-security-test</artifactId>
+            <groupId>org.springframework.kafka</groupId>
+            <artifactId>spring-kafka-test</artifactId>
             <scope>test</scope>
         </dependency>
         <dependency>

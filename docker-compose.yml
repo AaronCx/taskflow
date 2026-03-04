@@ -1,19 +1,79 @@
 version: "3.9"
 
-# ── Task Manager — Full Stack ─────────────────────────────────────────────────
+# ── Task Manager — Full Stack with Kafka ─────────────────────────────────────
+#
+# Service startup order:
+#   zookeeper → kafka → db → backend (seeds DB) → notifications
+#
+# Exposed ports:
+#   5432   PostgreSQL
+#   29092  Kafka (host access for tools like Offset Explorer)
+#   8080   Task Manager API   → http://localhost:8080/swagger-ui.html
+#   8081   Notification API   → http://localhost:8081/swagger-ui.html
 #
 # Usage:
 #   docker compose up --build          # first run (builds images)
 #   docker compose up -d               # subsequent runs (detached)
-#   docker compose down -v             # stop & remove containers + volumes
-#
-# Services:
-#   db      — PostgreSQL 15
-#   backend — Spring Boot API  → http://localhost:8080
-#             Swagger UI       → http://localhost:8080/swagger-ui.html
+#   docker compose down -v             # stop + remove containers + volumes
 # ─────────────────────────────────────────────────────────────────────────────
 
+# Reusable environment block for all Spring Boot services
+x-spring-env: &spring-env
+  SPRING_DATASOURCE_URL:      jdbc:postgresql://db:5432/taskmanager
+  SPRING_DATASOURCE_USERNAME: postgres
+  SPRING_DATASOURCE_PASSWORD: postgres
+  # IMPORTANT: override with a strong secret via env-var in production!
+  JWT_SECRET:                 dGFza21hbmFnZXJfc2VjcmV0X2tleV9mb3JfcG9ydGZvbGlvX2RlbW9fMjAyNA==
+  KAFKA_BOOTSTRAP_SERVERS:    kafka:9092
+
 services:
+
+  # ── Zookeeper ───────────────────────────────────────────────────────────────
+  zookeeper:
+    image: confluentinc/cp-zookeeper:7.5.3
+    container_name: taskmanager_zookeeper
+    environment:
+      ZOOKEEPER_CLIENT_PORT: 2181
+      ZOOKEEPER_TICK_TIME:   2000
+    healthcheck:
+      test: ["CMD-SHELL", "echo ruok | nc -w 2 localhost 2181 | grep imok"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    volumes:
+      - zookeeper_data:/var/lib/zookeeper/data
+      - zookeeper_log:/var/lib/zookeeper/log
+
+  # ── Kafka ───────────────────────────────────────────────────────────────────
+  kafka:
+    image: confluentinc/cp-kafka:7.5.3
+    container_name: taskmanager_kafka
+    depends_on:
+      zookeeper:
+        condition: service_healthy
+    ports:
+      - "29092:29092"     # Host access (local dev / Kafka tools)
+    environment:
+      KAFKA_BROKER_ID:                              1
+      KAFKA_ZOOKEEPER_CONNECT:                      zookeeper:2181
+      # PLAINTEXT     = inter-container traffic  (kafka:9092)
+      # PLAINTEXT_HOST = host-machine access     (localhost:29092)
+      KAFKA_ADVERTISED_LISTENERS:                   PLAINTEXT://kafka:9092,PLAINTEXT_HOST://localhost:29092
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP:         PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
+      KAFKA_INTER_BROKER_LISTENER_NAME:             PLAINTEXT
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR:       1
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR:          1
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE:              'true'
+      KAFKA_LOG_RETENTION_HOURS:                    168
+    healthcheck:
+      test: ["CMD-SHELL", "kafka-topics --bootstrap-server localhost:9092 --list"]
+      interval: 15s
+      timeout: 10s
+      retries: 10
+      start_period: 30s
+    volumes:
+      - kafka_data:/var/lib/kafka/data
 
   # ── PostgreSQL ──────────────────────────────────────────────────────────────
   db:
@@ -33,7 +93,7 @@ services:
       timeout: 5s
       retries: 5
 
-  # ── Spring Boot API ─────────────────────────────────────────────────────────
+  # ── Task Manager API (Spring Boot :8080) ────────────────────────────────────
   backend:
     build:
       context: ./backend
@@ -42,16 +102,37 @@ services:
     depends_on:
       db:
         condition: service_healthy
+      kafka:
+        condition: service_healthy
     environment:
-      SPRING_DATASOURCE_URL:      jdbc:postgresql://db:5432/taskmanager
-      SPRING_DATASOURCE_USERNAME: postgres
-      SPRING_DATASOURCE_PASSWORD: postgres
-      # Override with a strong secret in production!
-      JWT_SECRET: dGFza21hbmFnZXJfc2VjcmV0X2tleV9mb3JfcG9ydGZvbGlvX2RlbW9fMjAyNA==
+      <<: *spring-env
       JWT_EXPIRATION_MS: "86400000"
     ports:
       - "8080:8080"
     restart: unless-stopped
 
+  # ── Notification Service (Spring Boot :8081) ────────────────────────────────
+  notifications:
+    build:
+      context: ./backend-notifications
+      dockerfile: Dockerfile
+    container_name: taskmanager_notifications
+    depends_on:
+      db:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+      # Wait for backend so DataSeeder has run and the users table is populated
+      backend:
+        condition: service_healthy
+    environment:
+      <<: *spring-env
+    ports:
+      - "8081:8081"
+    restart: unless-stopped
+
 volumes:
   postgres_data:
+  zookeeper_data:
+  zookeeper_log:
+  kafka_data:

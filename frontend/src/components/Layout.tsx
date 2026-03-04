@@ -1,5 +1,6 @@
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { NotificationsDropdown } from './NotificationsDropdown';
 
 /**
  * App shell — top nav bar shown on authenticated pages.
@@ -26,12 +27,14 @@ export function Layout({ children }: { children: React.ReactNode }) {
             </Link>
 
             {/* Right side */}
-            <div className="flex items-center gap-4">
+            <div className="flex items-center gap-3">
               {user && (
                 <span className="text-sm text-gray-600 hidden sm:block">
                   {user.firstName} {user.lastName}
                 </span>
               )}
+              {/* Notification bell — polls the notifications service */}
+              <NotificationsDropdown />
               <Link
                 to="/tasks/new"
                 className="bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-medium

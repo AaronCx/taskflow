@@ -12,8 +12,15 @@ export default defineConfig({
   },
   server: {
     port: 5173,
-    // Proxy API calls to Spring Boot during development
+    // Proxy API calls to Spring Boot services during development.
+    // ORDER MATTERS: more-specific paths must come before '/api'.
     proxy: {
+      // Notifications service (port 8081) — must be listed before '/api'
+      '/api/notifications': {
+        target: 'http://localhost:8081',
+        changeOrigin: true,
+      },
+      // Task Manager API (port 8080)
       '/api': {
         target: 'http://localhost:8080',
         changeOrigin: true,
