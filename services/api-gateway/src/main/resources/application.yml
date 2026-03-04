@@ -1,0 +1,84 @@
+server:
+  port: 8080
+
+spring:
+  application:
+    name: api-gateway
+
+  # ── Redis (rate limiting) ─────────────────────────────────────────────────
+  data:
+    redis:
+      host: ${REDIS_HOST:localhost}
+      port: ${REDIS_PORT:6379}
+
+  # ── Route definitions ─────────────────────────────────────────────────────
+  cloud:
+    gateway:
+      # Global CORS — the frontend dev server runs on :5173
+      globalcors:
+        cors-configurations:
+          '[/**]':
+            allowedOrigins:
+              - "http://localhost:5173"
+              - "http://localhost:3000"
+            allowedMethods: [GET, POST, PUT, PATCH, DELETE, OPTIONS]
+            allowedHeaders: ["*"]
+            allowCredentials: true
+
+      routes:
+        # ── Auth Service ───────────────────────────────────────────────────
+        - id: auth-service
+          uri: ${AUTH_SERVICE_URL:http://localhost:8081}
+          predicates:
+            - Path=/api/auth/**
+          filters:
+            - name: RequestRateLimiter
+              args:
+                redis-rate-limiter.replenishRate: 10
+                redis-rate-limiter.burstCapacity: 20
+                key-resolver: "#{@ipKeyResolver}"
+
+        # ── Task Service ───────────────────────────────────────────────────
+        - id: task-service
+          uri: ${TASK_SERVICE_URL:http://localhost:8082}
+          predicates:
+            - Path=/api/tasks/**
+          filters:
+            - name: RequestRateLimiter
+              args:
+                redis-rate-limiter.replenishRate: 30
+                redis-rate-limiter.burstCapacity: 60
+                key-resolver: "#{@userKeyResolver}"
+
+        # ── Notification Service ───────────────────────────────────────────
+        - id: notification-service
+          uri: ${NOTIFICATION_SERVICE_URL:http://localhost:8083}
+          predicates:
+            - Path=/api/notifications/**
+          filters:
+            - name: RequestRateLimiter
+              args:
+                redis-rate-limiter.replenishRate: 20
+                redis-rate-limiter.burstCapacity: 40
+                key-resolver: "#{@userKeyResolver}"
+
+# ── App-level JWT config ──────────────────────────────────────────────────
+app:
+  jwt:
+    secret: ${JWT_SECRET:dGFza21hbmFnZXJfc2VjcmV0X2tleV9mb3JfcG9ydGZvbGlvX2RlbW9fMjAyNA==}
+    expiration-ms: ${JWT_EXPIRATION_MS:86400000}
+
+# ── Gateway custom settings ────────────────────────────────────────────────
+gateway:
+  rate-limit:
+    requests-per-minute: ${RATE_LIMIT_RPM:60}
+
+# ── Actuator ──────────────────────────────────────────────────────────────
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health, info, gateway
+  endpoint:
+    gateway:
+      enabled: true

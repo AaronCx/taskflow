@@ -1,175 +1,115 @@
-# TaskFlow — Full-Stack Task Manager
+# TaskFlow — Full-Stack Task Management Application
 
-> **Portfolio project** demonstrating production-ready Java/Spring Boot + React/TypeScript skills.
+> **Portfolio project** demonstrating microservices architecture, event-driven design, and modern full-stack development.
 
 [![CI](https://github.com/AaronCx/task-manager/actions/workflows/ci.yml/badge.svg)](https://github.com/AaronCx/task-manager/actions/workflows/ci.yml)
 
 ---
 
-## Screenshots
+## Architecture
 
-> *(Add screenshots here after first run — see the [Screenshots](#-screenshots) section)*
+```mermaid
+graph TD
+    FE[React Frontend<br/>Vite + TypeScript<br/>:5173 dev]
 
-| Login | Dashboard | Task Editor |
-|-------|-----------|-------------|
-| ![Login](docs/login.png) | ![Dashboard](docs/dashboard.png) | ![Editor](docs/editor.png) |
+    subgraph Gateway["API Gateway · :8080"]
+        GW[Spring Cloud Gateway<br/>JWT Validation<br/>Rate Limiting / Redis]
+    end
+
+    subgraph Services["Microservices"]
+        AUTH[Auth Service · :8081<br/>Register / Login<br/>Issues JWTs]
+        TASK[Task Service · :8082<br/>Task CRUD<br/>Kafka Producer]
+        NOTIF[Notification Service · :8083<br/>Kafka Consumer<br/>Stores per-user notifications]
+    end
+
+    subgraph Infra["Infrastructure"]
+        PG[(PostgreSQL 15<br/>auth_db · task_db<br/>notification_db)]
+        KAFKA[Kafka<br/>task.created<br/>task.updated<br/>task.deleted]
+        REDIS[(Redis 7<br/>Rate-limit counters)]
+    end
+
+    FE -->|/api/**| GW
+    GW -->|JWT validated + X-User-* headers| AUTH
+    GW -->|JWT validated + X-User-* headers| TASK
+    GW -->|JWT validated + X-User-* headers| NOTIF
+
+    AUTH --- PG
+    TASK --- PG
+    NOTIF --- PG
+
+    TASK -->|publish events| KAFKA
+    KAFKA -->|consume events| NOTIF
+
+    GW --- REDIS
+```
+
+### Request Flow
+
+```
+Browser → :8080 (Gateway)
+           ├─ validates JWT
+           ├─ rate-limits per user/IP via Redis
+           ├─ strips Authorization header
+           ├─ injects X-User-Id, X-User-Email, X-User-Name
+           └─ routes to downstream service
+
+Downstream services trust gateway headers — no re-validation needed.
+```
+
+### Kafka Event Flow
+
+```
+Task Service                  Kafka                 Notification Service
+────────────────             ──────────────         ─────────────────────
+createTask() ──publish──►  task.created   ──►  handleTaskCreated()
+updateTask() ──publish──►  task.updated   ──►  handleTaskUpdated()
+deleteTask() ──publish──►  task.deleted   ──►  handleTaskDeleted()
+```
+
+---
+
+## Why Microservices?
+
+| Concern              | Monolith                              | This Architecture                          |
+|----------------------|---------------------------------------|--------------------------------------------|
+| **Deployability**    | Full redeploy for any change          | Deploy each service independently          |
+| **Scalability**      | Scale entire app for one bottleneck   | Scale task-service only during peak CRUD   |
+| **Fault isolation**  | Auth bug → whole app down             | Auth bug → only auth-service affected      |
+| **Tech diversity**   | Locked to one stack                   | Each service can evolve independently      |
+| **Database schema**  | Shared schema = tight coupling        | Database-per-service (auth/task/notif db)  |
+
+> **Trade-off acknowledged:** Microservices add operational complexity (distributed tracing, network latency, eventual consistency). For a small team the monolith-first → microservices-later pattern is realistic — this project demonstrates both sides of that journey across its feature branches.
 
 ---
 
 ## Tech Stack
 
+### Backend (Java 17)
 | Layer | Technology |
-|---|---|
-| **Backend** | Java 17, Spring Boot 3.2, Spring Security, Hibernate/JPA |
-| **Auth** | JWT (jjwt 0.11.5) — stateless Bearer tokens |
-| **Database** | PostgreSQL 15 |
-| **API Docs** | Springdoc OpenAPI 3 / Swagger UI |
-| **Frontend** | React 18, TypeScript, Vite, Tailwind CSS |
-| **HTTP Client** | Axios (with in-memory JWT, not localStorage) |
-| **Routing** | React Router v6 with protected routes |
-| **DevOps** | Docker, Docker Compose, GitHub Actions CI |
+|-------|------------|
+| Framework | Spring Boot 3.2.3 |
+| Gateway | Spring Cloud Gateway (WebFlux) |
+| Security | JWT (jjwt 0.11.5), BCrypt(12) |
+| Persistence | Spring Data JPA + Hibernate |
+| Databases | PostgreSQL 15 (auth_db, task_db, notification_db) |
+| Messaging | Apache Kafka (Spring Kafka) |
+| Rate Limiting | Redis (Spring Data Redis Reactive) |
+| API Docs | SpringDoc OpenAPI 3 / Swagger UI |
 
----
+### Frontend (TypeScript)
+| Layer | Technology |
+|-------|------------|
+| Framework | React 18 + Vite |
+| Styling | Tailwind CSS |
+| HTTP | Axios (Bearer interceptor) |
+| Routing | React Router v6 |
+| Auth | In-memory JWT (never localStorage) |
 
-## Architecture Overview
-
-```
-┌─────────────────────────────────────────────────────────┐
-│                    Client (Browser)                     │
-│  React 18 + TypeScript + Tailwind CSS + Vite            │
-│  JWT stored in memory (AuthContext) — never localStorage │
-└──────────────────────┬──────────────────────────────────┘
-                       │ HTTP  (Axios + Bearer token)
-                       ▼
-┌─────────────────────────────────────────────────────────┐
-│             Spring Boot 3 API  :8080                    │
-│                                                         │
-│  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐  │
-│  │ AuthController│  │TaskController│  │GlobalException│  │
-│  └──────┬───────┘  └──────┬───────┘  │   Handler    │  │
-│         │                 │          └──────────────┘  │
-│  ┌──────▼───────────────────────────┐                  │
-│  │   Spring Security Filter Chain   │                  │
-│  │   JwtAuthenticationFilter        │                  │
-│  └──────────────────────────────────┘                  │
-│                                                         │
-│  ┌──────────────┐  ┌──────────────┐                    │
-│  │  AuthService │  │  TaskService │                    │
-│  └──────┬───────┘  └──────┬───────┘                    │
-│         │                 │                             │
-│  ┌──────▼─────────────────▼───────┐                    │
-│  │   UserRepository  TaskRepository│  (Spring Data JPA)│
-│  └──────────────────────────────────┘                  │
-└──────────────────────┬──────────────────────────────────┘
-                       │ JDBC
-                       ▼
-┌─────────────────────────────────────────────────────────┐
-│                    PostgreSQL 15                         │
-│           tables: users, tasks                          │
-└─────────────────────────────────────────────────────────┘
-```
-
-### Request Flow (authenticated)
-
-1. React sends `Authorization: Bearer <jwt>` header via Axios.
-2. `JwtAuthenticationFilter` validates the token and populates `SecurityContext`.
-3. Spring Security permits the request; the controller receives `@AuthenticationPrincipal User`.
-4. Service layer executes business logic, scoped to the authenticated user.
-5. JPA/Hibernate queries PostgreSQL; entity is mapped to a DTO and returned as JSON.
-
----
-
-## API Endpoints
-
-| Method | Path | Auth | Description |
-|--------|------|------|-------------|
-| `POST` | `/api/auth/register` | Public | Create a new account |
-| `POST` | `/api/auth/login`    | Public | Authenticate → receive JWT |
-| `GET`  | `/api/tasks`         | Bearer | List all user's tasks (optional `?status=` filter) |
-| `GET`  | `/api/tasks/{id}`    | Bearer | Get a single task |
-| `POST` | `/api/tasks`         | Bearer | Create a task |
-| `PUT`  | `/api/tasks/{id}`    | Bearer | Update a task |
-| `DELETE` | `/api/tasks/{id}` | Bearer | Delete a task |
-
-Full interactive docs: **http://localhost:8080/swagger-ui.html**
-
----
-
-## Local Development
-
-### Prerequisites
-
-- Java 17+
-- Maven 3.9+ (or use the included `./mvnw` wrapper)
-- Node.js 20+
-- Docker & Docker Compose
-
-### Option A — Docker Compose (recommended)
-
-```bash
-# Clone the repo
-git clone https://github.com/AaronCx/task-manager.git
-cd task-manager
-
-# Start everything (API + PostgreSQL)
-docker compose up --build
-
-# The API is now at:  http://localhost:8080
-# Swagger UI:         http://localhost:8080/swagger-ui.html
-```
-
-Then start the frontend separately:
-
-```bash
-cd frontend
-npm install
-npm run dev
-# → http://localhost:5173
-```
-
-### Option B — Manual setup
-
-**Backend:**
-
-```bash
-# Start a local PostgreSQL instance (or update application.properties)
-# Then:
-cd backend
-./mvnw spring-boot:run
-```
-
-**Frontend:**
-
-```bash
-cd frontend
-npm install
-npm run dev
-```
-
----
-
-## Running Tests
-
-```bash
-# Backend unit tests (uses H2 in-memory — no PostgreSQL needed)
-cd backend
-./mvnw test
-
-# Frontend type-check
-cd frontend
-npx tsc --noEmit
-```
-
----
-
-## Demo Credentials
-
-The database is seeded with sample data on first run:
-
-| Email | Password | Tasks |
-|-------|----------|-------|
-| `alice@demo.com` | `password123` | 8 tasks across all statuses |
-| `bob@demo.com`   | `password123` | 2 tasks |
+### DevOps
+| Tool | Purpose |
+|------|---------|
+| Docker + Compose | Full-stack orchestration |
+| GitHub Actions | CI — build + test all services |
 
 ---
 
@@ -177,47 +117,131 @@ The database is seeded with sample data on first run:
 
 ```
 task-manager/
-├── backend/                          Spring Boot 3 API (Maven)
-│   ├── src/main/java/com/portfolio/taskmanager/
-│   │   ├── config/                   Security, OpenAPI config
-│   │   ├── controller/               REST endpoints (Auth, Task)
-│   │   ├── dto/                      Request/Response records
-│   │   ├── entity/                   JPA entities (User, Task)
-│   │   ├── enums/                    TaskStatus, TaskPriority
-│   │   ├── exception/                GlobalExceptionHandler + custom exceptions
-│   │   ├── repository/               Spring Data JPA repositories
-│   │   ├── security/                 JWT provider, filter, UserDetailsService
-│   │   ├── seeder/                   DataSeeder (runs on first boot)
-│   │   └── service/                  Business logic (AuthService, TaskService)
-│   ├── Dockerfile                    Multi-stage Docker build
-│   └── pom.xml
+├── libs/
+│   └── common/                   # Shared library (JAR)
+│       └── src/main/java/com/portfolio/common/
+│           ├── event/TaskEvent.java        # Kafka event record
+│           ├── jwt/JwtTokenProvider.java   # Shared JWT utility
+│           └── security/UserContext.java   # Gateway-propagated identity
 │
-├── frontend/                         React 18 + TypeScript + Vite
-│   └── src/
-│       ├── api/                      Axios client + endpoint wrappers
-│       ├── components/               Layout, ProtectedRoute, Badges
-│       ├── context/                  AuthContext (in-memory JWT)
-│       ├── pages/                    Login, Register, Dashboard, TaskDetail
-│       └── types/                    Shared TypeScript interfaces
+├── services/
+│   ├── api-gateway/              # Spring Cloud Gateway — port 8080
+│   │   ├── filter/JwtAuthenticationFilter.java
+│   │   ├── filter/RateLimitFilter.java
+│   │   └── config/KeyResolverConfig.java
+│   │
+│   ├── auth-service/             # Auth + user management — port 8081
+│   │   └── (register, login, JWT issuance, user seeding)
+│   │
+│   ├── task-service/             # Task CRUD + Kafka producer — port 8082
+│   │   └── (create, read, update, delete, event publishing)
+│   │
+│   └── notification-service/     # Kafka consumer + REST — port 8083
+│       └── (consume events, persist notifications, /api/notifications)
 │
-├── .github/workflows/ci.yml          GitHub Actions CI (build + test)
-├── docker-compose.yml                API + PostgreSQL together
-└── README.md
+├── frontend/                     # React + TypeScript + Vite
+├── docker/
+│   └── postgres/01-init-databases.sql   # Creates auth_db, task_db, notification_db
+├── docker-compose.yml            # Full microservices stack
+└── pom.xml                       # Multi-module Maven parent
 ```
 
 ---
 
-## Key Design Decisions
+## Quick Start
 
-- **Stateless JWT** — no server-side sessions; tokens are validated on every request.
-- **In-memory token storage** — JWT lives in React state (never `localStorage`) to reduce XSS surface.
-- **Ownership scoping** — `TaskRepository.findByIdAndOwner` ensures users can only access their own tasks.
-- **Global exception handler** — all errors return a consistent `ErrorResponse` JSON shape.
-- **Multi-stage Docker build** — final image uses JRE-only alpine, keeping the image ~250 MB.
-- **DataSeeder guard** — checks `userRepository.count()` before seeding to prevent duplicate data on restart.
+### Option A — Docker Compose (recommended)
+
+```bash
+# 1. Clone the repo
+git clone https://github.com/AaronCx/task-manager.git
+cd task-manager
+
+# 2. Start the full stack (first run builds all images — takes ~3-5 min)
+docker compose up --build
+
+# 3. Start the frontend dev server
+cd frontend && npm install && npm run dev
+# → http://localhost:5173
+```
+
+### Option B — Local development
+
+**Prerequisites:** Java 17, Maven 3.9+, Node 20, Docker (for infrastructure)
+
+```bash
+# 1. Start infrastructure only
+docker compose up db redis zookeeper kafka -d
+
+# 2. Build and install the shared library
+./mvnw install -pl libs/common -am -DskipTests
+
+# 3. Start services (each in a separate terminal)
+./mvnw spring-boot:run -pl services/auth-service
+./mvnw spring-boot:run -pl services/task-service
+./mvnw spring-boot:run -pl services/notification-service
+./mvnw spring-boot:run -pl services/api-gateway
+
+# 4. Start the frontend
+cd frontend && npm install && npm run dev
+```
 
 ---
 
-## License
+## API Reference
 
-MIT
+All requests go through the **API Gateway** at `http://localhost:8080`.
+
+| Endpoint | Method | Auth | Description |
+|----------|--------|------|-------------|
+| `/api/auth/register` | POST | ❌ | Create account |
+| `/api/auth/login` | POST | ❌ | Receive JWT |
+| `/api/tasks` | GET | ✅ | List tasks (paginated) |
+| `/api/tasks` | POST | ✅ | Create task |
+| `/api/tasks/{id}` | GET | ✅ | Get task |
+| `/api/tasks/{id}` | PUT | ✅ | Update task |
+| `/api/tasks/{id}` | DELETE | ✅ | Delete task |
+| `/api/notifications` | GET | ✅ | List notifications |
+| `/api/notifications/unread-count` | GET | ✅ | Unread count |
+| `/api/notifications/read-all` | PUT | ✅ | Mark all read |
+
+**Swagger UIs** (direct service access, bypasses gateway):
+- Auth:          http://localhost:8081/swagger-ui.html
+- Tasks:         http://localhost:8082/swagger-ui.html
+- Notifications: http://localhost:8083/swagger-ui.html
+
+---
+
+## Demo Credentials
+
+Seeded automatically on first startup:
+
+| User | Email | Password |
+|------|-------|----------|
+| Alice Demo | alice@demo.com | password123 |
+| Bob Demo | bob@demo.com | password123 |
+
+---
+
+## CI / CD
+
+GitHub Actions runs on every push to `main` and `feature/*` branches:
+
+| Job | What it does |
+|-----|-------------|
+| `common` | Builds the shared library |
+| `auth-service` | Builds + runs tests (H2 in-memory) |
+| `task-service` | Builds + runs tests (H2, Kafka excluded) |
+| `notification-service` | Builds + runs tests (H2, Kafka excluded) |
+| `frontend` | TypeScript type-check + Vite production build |
+| `docker` | Validates `docker compose config` syntax |
+
+---
+
+## Feature Branches
+
+| Branch | Description |
+|--------|-------------|
+| `main` | Original monolith (single Spring Boot app) |
+| `feature/kafka-notifications` | Adds Kafka events + notification microservice to the monolith |
+| `feature/microservices-refactor` | Full microservices architecture (this branch) |

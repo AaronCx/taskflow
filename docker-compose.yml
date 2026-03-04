@@ -1,56 +1,178 @@
 version: "3.9"
 
-# ── Task Manager — Full Stack ─────────────────────────────────────────────────
+# ── Task Manager — Microservices Stack ───────────────────────────────────────
 #
 # Usage:
-#   docker compose up --build          # first run (builds images)
+#   docker compose up --build          # first run (builds all service images)
 #   docker compose up -d               # subsequent runs (detached)
 #   docker compose down -v             # stop & remove containers + volumes
 #
-# Services:
-#   db      — PostgreSQL 15
-#   backend — Spring Boot API  → http://localhost:8080
-#             Swagger UI       → http://localhost:8080/swagger-ui.html
+# Service map:
+#   db              — PostgreSQL 15 (auth_db, task_db, notification_db)
+#   redis           — Redis 7 (API Gateway rate limiting)
+#   zookeeper       — Kafka co-ordinator
+#   kafka           — Kafka broker (topics: task.created / updated / deleted)
+#   api-gateway     — Spring Cloud Gateway   → http://localhost:8080
+#   auth-service    — Auth / JWT service     → http://localhost:8080/api/auth/**
+#   task-service    — Task CRUD              → http://localhost:8080/api/tasks/**
+#   notification-service — Kafka consumer   → http://localhost:8080/api/notifications/**
 # ─────────────────────────────────────────────────────────────────────────────
+
+# ── Shared environment anchors ────────────────────────────────────────────────
+x-db-env: &db-env
+  SPRING_DATASOURCE_USERNAME: postgres
+  SPRING_DATASOURCE_PASSWORD: postgres
+
+x-kafka-env: &kafka-env
+  KAFKA_BOOTSTRAP_SERVERS: kafka:9092
+
+x-jwt-env: &jwt-env
+  # Override with a strong secret in production!
+  JWT_SECRET: dGFza21hbmFnZXJfc2VjcmV0X2tleV9mb3JfcG9ydGZvbGlvX2RlbW9fMjAyNA==
+  JWT_EXPIRATION_MS: "86400000"
 
 services:
 
-  # ── PostgreSQL ──────────────────────────────────────────────────────────────
+  # ── PostgreSQL ───────────────────────────────────────────────────────────────
   db:
     image: postgres:15-alpine
     container_name: taskmanager_db
     environment:
-      POSTGRES_DB:       taskmanager
       POSTGRES_USER:     postgres
       POSTGRES_PASSWORD: postgres
+      # Default database (required by the image; individual service DBs created via init script)
+      POSTGRES_DB:       postgres
     ports:
       - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
+      # Init script creates auth_db, task_db, notification_db on first start
+      - ./docker/postgres/01-init-databases.sql:/docker-entrypoint-initdb.d/01-init-databases.sql:ro
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U postgres"]
       interval: 10s
       timeout: 5s
       retries: 5
 
-  # ── Spring Boot API ─────────────────────────────────────────────────────────
-  backend:
+  # ── Redis (rate-limiting for API Gateway) ─────────────────────────────────────
+  redis:
+    image: redis:7-alpine
+    container_name: taskmanager_redis
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+
+  # ── Zookeeper ────────────────────────────────────────────────────────────────
+  zookeeper:
+    image: confluentinc/cp-zookeeper:7.5.3
+    container_name: taskmanager_zookeeper
+    environment:
+      ZOOKEEPER_CLIENT_PORT: 2181
+      ZOOKEEPER_TICK_TIME:   2000
+    healthcheck:
+      test: ["CMD-SHELL", "echo ruok | nc localhost 2181 | grep imok"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ── Kafka ────────────────────────────────────────────────────────────────────
+  kafka:
+    image: confluentinc/cp-kafka:7.5.3
+    container_name: taskmanager_kafka
+    depends_on:
+      zookeeper:
+        condition: service_healthy
+    environment:
+      KAFKA_BROKER_ID:                        1
+      KAFKA_ZOOKEEPER_CONNECT:                zookeeper:2181
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP:   PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
+      KAFKA_ADVERTISED_LISTENERS:             PLAINTEXT://kafka:9092,PLAINTEXT_HOST://localhost:29092
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE:        "true"
+    ports:
+      - "29092:29092"
+    healthcheck:
+      test: ["CMD-SHELL", "kafka-topics --bootstrap-server localhost:9092 --list"]
+      interval: 15s
+      timeout: 10s
+      retries: 5
+
+  # ── API Gateway ───────────────────────────────────────────────────────────────
+  api-gateway:
     build:
-      context: ./backend
-      dockerfile: Dockerfile
-    container_name: taskmanager_api
+      context: .
+      dockerfile: services/api-gateway/Dockerfile
+    container_name: taskmanager_gateway
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    environment:
+      <<: *jwt-env
+      REDIS_HOST: redis
+      REDIS_PORT: "6379"
+      AUTH_SERVICE_URL:         http://auth-service:8081
+      TASK_SERVICE_URL:         http://task-service:8082
+      NOTIFICATION_SERVICE_URL: http://notification-service:8083
+    ports:
+      - "8080:8080"
+    restart: unless-stopped
+
+  # ── Auth Service ──────────────────────────────────────────────────────────────
+  auth-service:
+    build:
+      context: .
+      dockerfile: services/auth-service/Dockerfile
+    container_name: taskmanager_auth
     depends_on:
       db:
         condition: service_healthy
     environment:
-      SPRING_DATASOURCE_URL:      jdbc:postgresql://db:5432/taskmanager
-      SPRING_DATASOURCE_USERNAME: postgres
-      SPRING_DATASOURCE_PASSWORD: postgres
-      # Override with a strong secret in production!
-      JWT_SECRET: dGFza21hbmFnZXJfc2VjcmV0X2tleV9mb3JfcG9ydGZvbGlvX2RlbW9fMjAyNA==
-      JWT_EXPIRATION_MS: "86400000"
+      <<: [*db-env, *jwt-env]
+      SPRING_DATASOURCE_URL: jdbc:postgresql://db:5432/auth_db
     ports:
-      - "8080:8080"
+      - "8081:8081"
+    restart: unless-stopped
+
+  # ── Task Service ──────────────────────────────────────────────────────────────
+  task-service:
+    build:
+      context: .
+      dockerfile: services/task-service/Dockerfile
+    container_name: taskmanager_tasks
+    depends_on:
+      db:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+    environment:
+      <<: [*db-env, *kafka-env]
+      SPRING_DATASOURCE_URL: jdbc:postgresql://db:5432/task_db
+    ports:
+      - "8082:8082"
+    restart: unless-stopped
+
+  # ── Notification Service ──────────────────────────────────────────────────────
+  notification-service:
+    build:
+      context: .
+      dockerfile: services/notification-service/Dockerfile
+    container_name: taskmanager_notifications
+    depends_on:
+      db:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+    environment:
+      <<: [*db-env, *kafka-env]
+      SPRING_DATASOURCE_URL: jdbc:postgresql://db:5432/notification_db
+    ports:
+      - "8083:8083"
     restart: unless-stopped
 
 volumes:

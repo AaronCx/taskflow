@@ -12,7 +12,10 @@ export default defineConfig({
   },
   server: {
     port: 5173,
-    // Proxy API calls to Spring Boot during development
+    // All API calls go through the API Gateway on :8080.
+    // The gateway routes /api/auth/** → auth-service
+    //                    /api/tasks/** → task-service
+    //                    /api/notifications/** → notification-service
     proxy: {
       '/api': {
         target: 'http://localhost:8080',
