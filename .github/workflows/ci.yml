@@ -123,8 +123,9 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: '20'
-          # No cache-dependency-path — setup-node auto-discovers **/package-lock.json
           cache: npm
+          # Glob discovers frontend/package-lock.json wherever it lives in the tree
+          cache-dependency-path: '**/package-lock.json'
 
       - name: Install dependencies
         working-directory: ./frontend
