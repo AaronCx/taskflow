@@ -7,6 +7,7 @@ import com.portfolio.taskmanager.entity.User;
 import com.portfolio.taskmanager.enums.TaskPriority;
 import com.portfolio.taskmanager.enums.TaskStatus;
 import com.portfolio.taskmanager.exception.ResourceNotFoundException;
+import com.portfolio.taskmanager.kafka.TaskEventProducer;
 import com.portfolio.taskmanager.repository.TaskRepository;
 import com.portfolio.taskmanager.repository.UserRepository;
 import org.junit.jupiter.api.BeforeEach;
@@ -29,8 +30,11 @@ import static org.mockito.Mockito.*;
 @DisplayName("TaskService")
 class TaskServiceTest {
 
-    @Mock TaskRepository taskRepository;
-    @Mock UserRepository userRepository;
+    @Mock TaskRepository       taskRepository;
+    @Mock UserRepository       userRepository;
+    // TaskEventProducer was added in the Kafka branch — must be mocked so
+    // @InjectMocks doesn't leave it null and cause a NullPointerException.
+    @Mock TaskEventProducer    eventProducer;
 
     @InjectMocks TaskService taskService;
 
