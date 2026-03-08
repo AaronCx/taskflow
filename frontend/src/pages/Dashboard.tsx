@@ -62,6 +62,8 @@ export function Dashboard() {
   const [loading,     setLoading]     = useState(true);
   const [error,       setError]       = useState<string | null>(null);
   const [deletingId,  setDeletingId]  = useState<number | null>(null);
+  const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
+  const [bulkLoading, setBulkLoading] = useState(false);
 
   // Debounced search
   const [debouncedSearch, setDebouncedSearch] = useState('');
@@ -99,6 +101,52 @@ export function Dashboard() {
       alert('Failed to delete task.');
     } finally {
       setDeletingId(null);
+    }
+  };
+
+  const toggleSelect = (id: number) => {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  };
+
+  const toggleSelectAll = () => {
+    if (selectedIds.size === sortedTasks.length) {
+      setSelectedIds(new Set());
+    } else {
+      setSelectedIds(new Set(tasks.map((t) => t.id)));
+    }
+  };
+
+  const handleBulkStatus = async (status: TaskStatus) => {
+    if (selectedIds.size === 0) return;
+    setBulkLoading(true);
+    try {
+      await tasksApi.bulkUpdateStatus([...selectedIds], status);
+      setSelectedIds(new Set());
+      fetchTasks();
+    } catch {
+      alert('Bulk update failed.');
+    } finally {
+      setBulkLoading(false);
+    }
+  };
+
+  const handleBulkDelete = async () => {
+    if (selectedIds.size === 0) return;
+    if (!confirm(`Delete ${selectedIds.size} task(s)?`)) return;
+    setBulkLoading(true);
+    try {
+      await tasksApi.bulkDelete([...selectedIds]);
+      setSelectedIds(new Set());
+      fetchTasks();
+    } catch {
+      alert('Bulk delete failed.');
+    } finally {
+      setBulkLoading(false);
     }
   };
 
@@ -186,6 +234,60 @@ export function Dashboard() {
         </select>
       </div>
 
+      {/* ── Bulk action bar ─────────────────────────────────────────── */}
+      {sortedTasks.length > 0 && (
+        <div className="flex items-center gap-3 mb-4">
+          <label className="flex items-center gap-2 text-sm text-gray-600 cursor-pointer">
+            <input
+              type="checkbox"
+              checked={selectedIds.size === sortedTasks.length && sortedTasks.length > 0}
+              onChange={toggleSelectAll}
+              className="w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+            />
+            Select all
+          </label>
+          {selectedIds.size > 0 && (
+            <>
+              <span className="text-xs text-gray-500">{selectedIds.size} selected</span>
+              <div className="flex gap-1 ml-auto">
+                <button
+                  onClick={() => handleBulkStatus('TODO')}
+                  disabled={bulkLoading}
+                  className="px-3 py-1 text-xs font-medium rounded-lg border border-gray-300
+                             hover:bg-gray-50 disabled:opacity-50"
+                >
+                  To Do
+                </button>
+                <button
+                  onClick={() => handleBulkStatus('IN_PROGRESS')}
+                  disabled={bulkLoading}
+                  className="px-3 py-1 text-xs font-medium rounded-lg border border-blue-300
+                             text-blue-700 hover:bg-blue-50 disabled:opacity-50"
+                >
+                  In Progress
+                </button>
+                <button
+                  onClick={() => handleBulkStatus('DONE')}
+                  disabled={bulkLoading}
+                  className="px-3 py-1 text-xs font-medium rounded-lg border border-green-300
+                             text-green-700 hover:bg-green-50 disabled:opacity-50"
+                >
+                  Done
+                </button>
+                <button
+                  onClick={handleBulkDelete}
+                  disabled={bulkLoading}
+                  className="px-3 py-1 text-xs font-medium rounded-lg border border-red-300
+                             text-red-700 hover:bg-red-50 disabled:opacity-50"
+                >
+                  Delete
+                </button>
+              </div>
+            </>
+          )}
+        </div>
+      )}
+
       {/* ── Task list ──────────────────────────────────────────────── */}
       {loading && (
         <div className="flex justify-center py-20">
@@ -226,6 +328,8 @@ export function Dashboard() {
               task={task}
               onDelete={handleDelete}
               isDeleting={deletingId === task.id}
+              selected={selectedIds.has(task.id)}
+              onToggleSelect={() => toggleSelect(task.id)}
             />
           ))}
         </div>
@@ -240,18 +344,30 @@ function TaskCard({
   task,
   onDelete,
   isDeleting,
+  selected,
+  onToggleSelect,
 }: {
   task: Task;
   onDelete: (id: number) => void;
   isDeleting: boolean;
+  selected: boolean;
+  onToggleSelect: () => void;
 }) {
   const isOverdue =
     task.dueDate && task.status !== 'DONE' && new Date(task.dueDate) < new Date();
 
   return (
-    <div className="bg-white rounded-xl border border-gray-200 p-5
-                    hover:border-blue-300 hover:shadow-sm transition-all group">
+    <div className={`bg-white rounded-xl border p-5 hover:shadow-sm transition-all group ${
+      selected ? 'border-blue-400 bg-blue-50/30' : 'border-gray-200 hover:border-blue-300'
+    }`}>
       <div className="flex items-start justify-between gap-4">
+        {/* Checkbox */}
+        <input
+          type="checkbox"
+          checked={selected}
+          onChange={onToggleSelect}
+          className="mt-1 w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500 shrink-0"
+        />
         {/* Left: title + meta */}
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 flex-wrap">

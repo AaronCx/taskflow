@@ -22,4 +22,10 @@ export const tasksApi = {
 
   remove: (id: number) =>
     axiosClient.delete(`/tasks/${id}`),
+
+  bulkUpdateStatus: (ids: number[], status: string) =>
+    axiosClient.put<{ updated: number }>('/tasks/bulk-update', { ids, status }),
+
+  bulkDelete: (ids: number[]) =>
+    axiosClient.delete<{ deleted: number }>('/tasks/bulk-delete', { data: { ids } }),
 };

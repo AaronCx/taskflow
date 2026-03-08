@@ -16,6 +16,7 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Map;
 
 /**
  * Task CRUD endpoints — all require a valid JWT.
@@ -93,5 +94,34 @@ public class TaskController {
 
         taskService.deleteTask(id, currentUser);
         return ResponseEntity.noContent().build();
+    }
+
+    // ── Bulk operations ─────────────────────────────────────────────
+
+    @PutMapping("/bulk-update")
+    @Operation(summary = "Update status for multiple tasks")
+    public ResponseEntity<Map<String, Integer>> bulkUpdateStatus(
+            @RequestBody Map<String, Object> body,
+            @AuthenticationPrincipal User currentUser) {
+
+        @SuppressWarnings("unchecked")
+        List<Integer> ids = (List<Integer>) body.get("ids");
+        String status = (String) body.get("status");
+        TaskStatus newStatus = TaskStatus.valueOf(status);
+
+        int updated = taskService.bulkUpdateStatus(
+                ids.stream().map(Long::valueOf).toList(), newStatus, currentUser);
+        return ResponseEntity.ok(Map.of("updated", updated));
+    }
+
+    @DeleteMapping("/bulk-delete")
+    @Operation(summary = "Delete multiple tasks")
+    public ResponseEntity<Map<String, Integer>> bulkDelete(
+            @RequestBody Map<String, List<Integer>> body,
+            @AuthenticationPrincipal User currentUser) {
+
+        List<Long> ids = body.get("ids").stream().map(Long::valueOf).toList();
+        int deleted = taskService.bulkDelete(ids, currentUser);
+        return ResponseEntity.ok(Map.of("deleted", deleted));
     }
 }

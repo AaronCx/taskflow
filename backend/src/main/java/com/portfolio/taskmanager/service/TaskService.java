@@ -132,6 +132,33 @@ public class TaskService {
         eventProducer.publish(TaskEvent.TOPIC_DELETED, event);
     }
 
+    // ── Bulk operations ──────────────────────────────────────────────
+
+    @Transactional
+    public int bulkUpdateStatus(List<Long> ids, TaskStatus newStatus, User currentUser) {
+        int count = 0;
+        for (Long id : ids) {
+            taskRepository.findByIdAndOwner(id, currentUser).ifPresent(task -> {
+                task.setStatus(newStatus);
+                taskRepository.save(task);
+            });
+            count++;
+        }
+        return count;
+    }
+
+    @Transactional
+    public int bulkDelete(List<Long> ids, User currentUser) {
+        int count = 0;
+        for (Long id : ids) {
+            taskRepository.findByIdAndOwner(id, currentUser).ifPresent(task -> {
+                taskRepository.delete(task);
+            });
+            count++;
+        }
+        return count;
+    }
+
     // ── Helpers ───────────────────────────────────────────────────────
 
     /** Fetches a task and asserts that the given user owns it. */
