@@ -5,6 +5,7 @@ import { Login }      from './pages/Login';
 import { Register }   from './pages/Register';
 import { Dashboard }  from './pages/Dashboard';
 import { TaskDetail } from './pages/TaskDetail';
+import { Profile } from './pages/Profile';
 
 /**
  * Root application component.
@@ -30,6 +31,7 @@ function App() {
           <Route element={<ProtectedRoute />}>
             <Route path="/dashboard"  element={<Dashboard />}  />
             <Route path="/tasks/:id"  element={<TaskDetail />}  />
+            <Route path="/profile"    element={<Profile />}     />
           </Route>
 
           {/* Default redirect */}

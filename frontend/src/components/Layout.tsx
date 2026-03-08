@@ -29,9 +29,9 @@ export function Layout({ children }: { children: React.ReactNode }) {
             {/* Right side */}
             <div className="flex items-center gap-3">
               {user && (
-                <span className="text-sm text-gray-600 hidden sm:block">
+                <Link to="/profile" className="text-sm text-gray-600 hidden sm:block hover:text-blue-600 transition-colors">
                   {user.firstName} {user.lastName}
-                </span>
+                </Link>
               )}
               {/* Notification bell — polls the notifications service */}
               <NotificationsDropdown />
