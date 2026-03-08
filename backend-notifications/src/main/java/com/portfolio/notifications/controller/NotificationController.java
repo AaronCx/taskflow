@@ -3,12 +3,15 @@ package com.portfolio.notifications.controller;
 import com.portfolio.notifications.dto.NotificationResponse;
 import com.portfolio.notifications.entity.User;
 import com.portfolio.notifications.service.NotificationService;
+import com.portfolio.notifications.service.SseEmitterService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
 import java.util.List;
 import java.util.Map;
@@ -29,6 +32,7 @@ import java.util.Map;
 public class NotificationController {
 
     private final NotificationService notificationService;
+    private final SseEmitterService sseEmitterService;
 
     @GetMapping
     @Operation(summary = "Get recent notifications (up to 20) for the authenticated user")
@@ -55,5 +59,11 @@ public class NotificationController {
 
         int updated = notificationService.markAllReadForUser(currentUser);
         return ResponseEntity.ok(Map.of("marked", updated));
+    }
+
+    @GetMapping(value = "/stream", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
+    @Operation(summary = "Subscribe to real-time notifications via Server-Sent Events")
+    public SseEmitter stream(@AuthenticationPrincipal User currentUser) {
+        return sseEmitterService.createEmitter(currentUser.getId());
     }
 }

@@ -27,6 +27,7 @@ public class NotificationService {
     private static final int MAX_NOTIFICATIONS_PER_PAGE = 20;
 
     private final NotificationRepository notificationRepository;
+    private final SseEmitterService sseEmitterService;
 
     // ── Kafka event handlers ──────────────────────────────────────────
 
@@ -110,7 +111,11 @@ public class NotificationService {
                 .userId(event.ownerId())
                 .read(false)
                 .build();
-        notificationRepository.save(notification);
+        Notification saved = notificationRepository.save(notification);
+
+        // Push real-time notification via SSE
+        sseEmitterService.sendToUser(event.ownerId(), "notification",
+                NotificationResponse.from(saved));
     }
 
     private String formatStatus(String status) {

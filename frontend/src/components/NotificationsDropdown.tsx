@@ -1,10 +1,12 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, useCallback } from 'react';
 import { Notification, notificationsApi } from '../api/notifications';
+import { getAccessToken } from '../api/axiosClient';
 import { formatDistanceToNow } from 'date-fns';
 
 /**
  * Notification bell icon with:
- *   - Unread count badge (polled every 30 s)
+ *   - Real-time push via SSE (with polling fallback)
+ *   - Unread count badge
  *   - Click-to-open dropdown showing the last 20 notifications
  *   - Auto-marks all as read when the dropdown is opened
  */
@@ -14,19 +16,57 @@ export function NotificationsDropdown() {
   const [unreadCount,   setUnreadCount]   = useState(0);
   const [loading,       setLoading]       = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
+  const sseRef = useRef<EventSource | null>(null);
 
-  // ── Poll unread count every 30 s ─────────────────────────────────
+  // ── Fetch unread count ──────────────────────────────────────────
+  const fetchUnreadCount = useCallback(() => {
+    notificationsApi.getUnreadCount()
+      .then((res) => setUnreadCount(res.data.count))
+      .catch(() => { /* silently ignore */ });
+  }, []);
+
+  // ── Connect to SSE stream ──────────────────────────────────────
   useEffect(() => {
-    const fetchCount = () => {
-      notificationsApi.getUnreadCount()
-        .then((res) => setUnreadCount(res.data.count))
-        .catch(() => { /* silently ignore — notifications are non-critical */ });
+    const baseUrl = import.meta.env.VITE_NOTIFICATIONS_URL || '/api';
+    const token = getAccessToken();
+
+    // Try SSE connection
+    const connectSse = () => {
+      if (!token) return null;
+
+      const url = `${baseUrl}/notifications/stream?token=${encodeURIComponent(token)}`;
+      const eventSource = new EventSource(url);
+
+      eventSource.addEventListener('notification', (event) => {
+        try {
+          const notification: Notification = JSON.parse(event.data);
+          setNotifications((prev) => [notification, ...prev].slice(0, 20));
+          setUnreadCount((prev) => prev + 1);
+        } catch {
+          // ignore parse errors
+        }
+      });
+
+      eventSource.onerror = () => {
+        eventSource.close();
+        sseRef.current = null;
+        // Fall back to polling
+      };
+
+      return eventSource;
     };
 
-    fetchCount();
-    const interval = setInterval(fetchCount, 30_000);
-    return () => clearInterval(interval);
-  }, []);
+    sseRef.current = connectSse();
+
+    // Polling fallback: poll every 30s regardless (SSE may not be available in prod)
+    fetchUnreadCount();
+    const interval = setInterval(fetchUnreadCount, 30_000);
+
+    return () => {
+      clearInterval(interval);
+      sseRef.current?.close();
+    };
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   // ── Close dropdown on outside click ──────────────────────────────
   useEffect(() => {
@@ -109,7 +149,6 @@ export function NotificationsDropdown() {
 
             {!loading && notifications.length === 0 && (
               <div className="py-10 text-center">
-                <span className="text-3xl">🔔</span>
                 <p className="mt-2 text-sm text-gray-500">No notifications yet</p>
                 <p className="text-xs text-gray-400 mt-0.5">
                   Events appear when tasks change
@@ -131,10 +170,16 @@ export function NotificationsDropdown() {
 
 function NotificationItem({ notification: n }: { notification: Notification }) {
   const icon = {
-    TASK_CREATED: '✅',
-    TASK_UPDATED: '🔄',
-    TASK_DELETED: '🗑️',
-  }[n.eventType] ?? '🔔';
+    TASK_CREATED: 'green',
+    TASK_UPDATED: 'blue',
+    TASK_DELETED: 'red',
+  }[n.eventType] ?? 'gray';
+
+  const iconLabel = {
+    TASK_CREATED: 'Created',
+    TASK_UPDATED: 'Updated',
+    TASK_DELETED: 'Deleted',
+  }[n.eventType] ?? 'Event';
 
   const timeAgo = n.createdAt
     ? formatDistanceToNow(new Date(n.createdAt), { addSuffix: true })
@@ -145,7 +190,9 @@ function NotificationItem({ notification: n }: { notification: Notification }) {
       !n.read ? 'bg-blue-50/50' : ''
     }`}>
       <div className="flex gap-3 items-start">
-        <span className="text-lg mt-0.5 shrink-0">{icon}</span>
+        <span className={`inline-flex items-center justify-center w-6 h-6 rounded-full text-[10px] font-bold text-white mt-0.5 shrink-0 bg-${icon}-500`}>
+          {iconLabel.charAt(0)}
+        </span>
         <div className="flex-1 min-w-0">
           <p className="text-xs text-gray-800 leading-relaxed">{n.message}</p>
           <p className="text-[11px] text-gray-400 mt-1">{timeAgo}</p>
