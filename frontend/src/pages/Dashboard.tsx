@@ -163,24 +163,24 @@ export function Dashboard() {
   return (
     <Layout>
       {/* ── Page header ────────────────────────────────────────────── */}
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
+      <div className="mb-6 sm:mb-8">
+        <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white">
           Good {getGreeting()}, {user?.firstName}
         </h1>
-        <p className="mt-1 text-gray-500 dark:text-gray-400">Here's what's on your plate today.</p>
+        <p className="mt-1 text-sm sm:text-base text-gray-500 dark:text-gray-400">Here's what's on your plate today.</p>
       </div>
 
       {/* ── Stats row ──────────────────────────────────────────────── */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-8">
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4 mb-6 sm:mb-8">
         {[
           { label: 'Total',       value: stats.total,      color: 'text-gray-700',  bg: 'bg-gray-50'   },
           { label: 'To Do',       value: stats.todo,       color: 'text-gray-600',  bg: 'bg-gray-50'   },
           { label: 'In Progress', value: stats.inProgress, color: 'text-blue-700',  bg: 'bg-blue-50'   },
           { label: 'Done',        value: stats.done,       color: 'text-green-700', bg: 'bg-green-50'  },
         ].map(({ label, value, color, bg }) => (
-          <div key={label} className={`${bg} rounded-xl p-4 border border-gray-100`}>
+          <div key={label} className={`${bg} rounded-xl p-3 sm:p-4 border border-gray-100`}>
             <p className="text-xs font-medium text-gray-500 uppercase tracking-wide">{label}</p>
-            <p className={`text-3xl font-bold mt-1 ${color}`}>{value}</p>
+            <p className={`text-2xl sm:text-3xl font-bold mt-1 ${color}`}>{value}</p>
           </div>
         ))}
       </div>
@@ -204,34 +204,36 @@ export function Dashboard() {
           />
         </div>
 
-        {/* Status filter tabs */}
-        <div className="flex gap-1 bg-gray-100 p-1 rounded-lg w-fit">
-          {STATUS_FILTERS.map(({ label, value }) => (
-            <button
-              key={value}
-              onClick={() => setFilter(value)}
-              className={`px-4 py-1.5 rounded-md text-sm font-medium transition-colors ${
-                filter === value
-                  ? 'bg-white text-gray-900 shadow-sm'
-                  : 'text-gray-500 hover:text-gray-800'
-              }`}
-            >
-              {label}
-            </button>
-          ))}
-        </div>
+        <div className="flex gap-2 sm:gap-3">
+          {/* Status filter tabs */}
+          <div className="flex gap-1 bg-gray-100 p-1 rounded-lg overflow-x-auto">
+            {STATUS_FILTERS.map(({ label, value }) => (
+              <button
+                key={value}
+                onClick={() => setFilter(value)}
+                className={`px-3 sm:px-4 py-1.5 rounded-md text-sm font-medium transition-colors whitespace-nowrap ${
+                  filter === value
+                    ? 'bg-white text-gray-900 shadow-sm'
+                    : 'text-gray-500 hover:text-gray-800'
+                }`}
+              >
+                {label}
+              </button>
+            ))}
+          </div>
 
-        {/* Sort dropdown */}
-        <select
-          value={sortBy}
-          onChange={(e) => setSortBy(e.target.value as SortKey)}
-          className="px-3 py-2 border border-gray-300 rounded-lg text-sm bg-white
-                     focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-        >
-          {SORT_OPTIONS.map(({ label, value }) => (
-            <option key={value} value={value}>{label}</option>
-          ))}
-        </select>
+          {/* Sort dropdown */}
+          <select
+            value={sortBy}
+            onChange={(e) => setSortBy(e.target.value as SortKey)}
+            className="px-3 py-2 border border-gray-300 rounded-lg text-sm bg-white shrink-0
+                       focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+          >
+            {SORT_OPTIONS.map(({ label, value }) => (
+              <option key={value} value={value}>{label}</option>
+            ))}
+          </select>
+        </div>
       </div>
 
       {/* ── Bulk action bar ─────────────────────────────────────────── */}
@@ -357,10 +359,10 @@ function TaskCard({
     task.dueDate && task.status !== 'DONE' && new Date(task.dueDate) < new Date();
 
   return (
-    <div className={`bg-white dark:bg-gray-800 rounded-xl border p-5 hover:shadow-sm transition-all group ${
+    <div className={`bg-white dark:bg-gray-800 rounded-xl border p-4 sm:p-5 hover:shadow-sm transition-all group ${
       selected ? 'border-blue-400 bg-blue-50/30 dark:bg-blue-900/20' : 'border-gray-200 dark:border-gray-700 hover:border-blue-300'
     }`}>
-      <div className="flex items-start justify-between gap-4">
+      <div className="flex items-start gap-3 sm:gap-4">
         {/* Checkbox */}
         <input
           type="checkbox"
@@ -368,10 +370,10 @@ function TaskCard({
           onChange={onToggleSelect}
           className="mt-1 w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500 shrink-0"
         />
-        {/* Left: title + meta */}
+        {/* Content */}
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 flex-wrap">
-            <h3 className="text-sm font-semibold text-gray-900 dark:text-white truncate">
+            <h3 className="text-sm font-semibold text-gray-900 dark:text-white">
               {task.title}
             </h3>
             <StatusBadge   status={task.status}   />
@@ -390,37 +392,39 @@ function TaskCard({
             <p className="mt-1 text-sm text-gray-500 line-clamp-2">{task.description}</p>
           )}
 
-          <div className="mt-2 flex items-center gap-4 text-xs text-gray-400">
-            {task.dueDate && (
-              <span className={isOverdue ? 'text-red-500 font-medium' : ''}>
-                {isOverdue ? 'Overdue: ' : 'Due: '}
-                {format(new Date(task.dueDate), 'MMM d, yyyy')}
-              </span>
-            )}
-            {task.assignedToName && (
-              <span>Assigned: {task.assignedToName}</span>
-            )}
-          </div>
-        </div>
+          <div className="mt-2 flex items-center justify-between gap-2">
+            <div className="flex items-center gap-3 sm:gap-4 text-xs text-gray-400">
+              {task.dueDate && (
+                <span className={isOverdue ? 'text-red-500 font-medium' : ''}>
+                  {isOverdue ? 'Overdue: ' : 'Due: '}
+                  {format(new Date(task.dueDate), 'MMM d, yyyy')}
+                </span>
+              )}
+              {task.assignedToName && (
+                <span className="hidden sm:inline">Assigned: {task.assignedToName}</span>
+              )}
+            </div>
 
-        {/* Right: actions */}
-        <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-          <Link
-            to={`/tasks/${task.id}`}
-            className="text-xs text-blue-600 hover:text-blue-800 font-medium px-3 py-1.5
-                       border border-blue-200 rounded-lg hover:bg-blue-50 transition-colors"
-          >
-            Edit
-          </Link>
-          <button
-            onClick={() => onDelete(task.id)}
-            disabled={isDeleting}
-            className="text-xs text-red-600 hover:text-red-800 font-medium px-3 py-1.5
-                       border border-red-200 rounded-lg hover:bg-red-50 transition-colors
-                       disabled:opacity-50"
-          >
-            {isDeleting ? '...' : 'Delete'}
-          </button>
+            {/* Actions — always visible on mobile, hover on desktop */}
+            <div className="flex items-center gap-1.5 sm:gap-2 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity shrink-0">
+              <Link
+                to={`/tasks/${task.id}`}
+                className="text-xs text-blue-600 hover:text-blue-800 font-medium px-2 sm:px-3 py-1 sm:py-1.5
+                           border border-blue-200 rounded-lg hover:bg-blue-50 transition-colors"
+              >
+                Edit
+              </Link>
+              <button
+                onClick={() => onDelete(task.id)}
+                disabled={isDeleting}
+                className="text-xs text-red-600 hover:text-red-800 font-medium px-2 sm:px-3 py-1 sm:py-1.5
+                           border border-red-200 rounded-lg hover:bg-red-50 transition-colors
+                           disabled:opacity-50"
+              >
+                {isDeleting ? '...' : 'Delete'}
+              </button>
+            </div>
+          </div>
         </div>
       </div>
     </div>
