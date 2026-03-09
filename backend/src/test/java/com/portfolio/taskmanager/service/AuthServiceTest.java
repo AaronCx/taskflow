@@ -3,6 +3,7 @@ package com.portfolio.taskmanager.service;
 import com.portfolio.taskmanager.dto.request.LoginRequest;
 import com.portfolio.taskmanager.dto.request.RegisterRequest;
 import com.portfolio.taskmanager.dto.response.AuthResponse;
+import com.portfolio.taskmanager.entity.RefreshToken;
 import com.portfolio.taskmanager.entity.User;
 import com.portfolio.taskmanager.exception.ConflictException;
 import com.portfolio.taskmanager.repository.UserRepository;
@@ -33,6 +34,7 @@ class AuthServiceTest {
     @Mock PasswordEncoder       passwordEncoder;
     @Mock JwtTokenProvider      jwtTokenProvider;
     @Mock AuthenticationManager authenticationManager;
+    @Mock RefreshTokenService   refreshTokenService;
 
     @InjectMocks AuthService authService;
 
@@ -61,10 +63,13 @@ class AuthServiceTest {
         when(passwordEncoder.encode("secret123")).thenReturn("hashed");
         when(userRepository.save(any(User.class))).thenReturn(savedUser);
         when(jwtTokenProvider.generateToken(any(User.class))).thenReturn("jwt-token");
+        RefreshToken mockRefresh = RefreshToken.builder().token("refresh-token").user(savedUser).build();
+        when(refreshTokenService.createRefreshToken(any(User.class))).thenReturn(mockRefresh);
 
         AuthResponse response = authService.register(registerRequest);
 
         assertThat(response.token()).isEqualTo("jwt-token");
+        assertThat(response.refreshToken()).isEqualTo("refresh-token");
         assertThat(response.email()).isEqualTo("jane@test.com");
         assertThat(response.tokenType()).isEqualTo("Bearer");
         verify(userRepository).save(any(User.class));
@@ -91,10 +96,13 @@ class AuthServiceTest {
 
         when(userRepository.findByEmail("jane@test.com")).thenReturn(Optional.of(savedUser));
         when(jwtTokenProvider.generateToken(savedUser)).thenReturn("fresh-token");
+        RefreshToken mockRefresh = RefreshToken.builder().token("refresh-token").user(savedUser).build();
+        when(refreshTokenService.createRefreshToken(savedUser)).thenReturn(mockRefresh);
 
         AuthResponse response = authService.login(loginRequest);
 
         assertThat(response.token()).isEqualTo("fresh-token");
+        assertThat(response.refreshToken()).isEqualTo("refresh-token");
         verify(authenticationManager).authenticate(
                 any(UsernamePasswordAuthenticationToken.class));
     }
