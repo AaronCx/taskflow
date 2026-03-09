@@ -8,16 +8,6 @@
 
 ---
 
-## Screenshots
-
-> *(Add screenshots here after first run — see the [Screenshots](#-screenshots) section)*
-
-| Login | Dashboard | Task Editor |
-|-------|-----------|-------------|
-| ![Login](docs/login.png) | ![Dashboard](docs/dashboard.png) | ![Editor](docs/editor.png) |
-
----
-
 ## Tech Stack
 
 | Layer | Technology |
@@ -176,8 +166,8 @@ Swagger UI: **http://localhost:8081/swagger-ui.html**
 
 ```bash
 # Clone the repo
-git clone https://github.com/AaronCx/task-manager.git
-cd task-manager
+git clone https://github.com/AaronCx/taskflow.git
+cd taskflow
 
 # Start everything: Zookeeper + Kafka + PostgreSQL + API + Notifications
 docker compose up --build
@@ -250,7 +240,7 @@ The database is seeded with sample data on first run:
 ## Project Structure
 
 ```
-task-manager/
+taskflow/
 ├── backend/                          Task Manager API — Spring Boot 3 (port 8080)
 │   ├── src/main/java/com/portfolio/taskmanager/
 │   │   ├── config/                   SecurityConfig, OpenApiConfig, KafkaProducerConfig
