@@ -107,8 +107,8 @@ export function NotificationsDropdown() {
       <button
         onClick={handleOpen}
         aria-label={`Notifications${unreadCount > 0 ? ` (${unreadCount} unread)` : ''}`}
-        className="relative p-2 rounded-lg text-gray-500 hover:text-gray-800
-                   hover:bg-gray-100 transition-colors"
+        className="relative p-2 rounded-lg text-gray-500 dark:text-slate-400 hover:text-gray-800 dark:hover:text-white
+                   hover:bg-gray-100 dark:hover:bg-slate-800 transition-colors"
       >
         {/* Bell icon */}
         <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
@@ -128,18 +128,18 @@ export function NotificationsDropdown() {
 
       {/* ── Dropdown panel ───────────────────────────────────────── */}
       {open && (
-        <div className="absolute right-0 mt-2 w-80 bg-white rounded-xl shadow-lg border
-                        border-gray-200 z-50 overflow-hidden">
+        <div className="absolute right-0 mt-2 w-80 bg-white dark:bg-slate-800 rounded-xl shadow-lg border
+                        border-gray-200 dark:border-slate-700 z-50 overflow-hidden">
           {/* Header */}
-          <div className="px-4 py-3 border-b border-gray-100 flex items-center justify-between">
-            <h3 className="text-sm font-semibold text-gray-900">Notifications</h3>
+          <div className="px-4 py-3 border-b border-gray-100 dark:border-slate-700 flex items-center justify-between">
+            <h3 className="text-sm font-semibold text-gray-900 dark:text-white">Notifications</h3>
             {notifications.length > 0 && (
-              <span className="text-xs text-gray-400">{notifications.length} recent</span>
+              <span className="text-xs text-gray-400 dark:text-slate-500">{notifications.length} recent</span>
             )}
           </div>
 
           {/* Body */}
-          <div className="max-h-96 overflow-y-auto divide-y divide-gray-50">
+          <div className="max-h-96 overflow-y-auto divide-y divide-gray-50 dark:divide-slate-700/50">
             {loading && (
               <div className="flex justify-center py-8">
                 <div className="w-5 h-5 border-2 border-blue-500 border-t-transparent
@@ -149,8 +149,8 @@ export function NotificationsDropdown() {
 
             {!loading && notifications.length === 0 && (
               <div className="py-10 text-center">
-                <p className="mt-2 text-sm text-gray-500">No notifications yet</p>
-                <p className="text-xs text-gray-400 mt-0.5">
+                <p className="mt-2 text-sm text-gray-500 dark:text-slate-400">No notifications yet</p>
+                <p className="text-xs text-gray-400 dark:text-slate-500 mt-0.5">
                   Events appear when tasks change
                 </p>
               </div>
@@ -186,16 +186,16 @@ function NotificationItem({ notification: n }: { notification: Notification }) {
     : '';
 
   return (
-    <div className={`px-4 py-3 hover:bg-gray-50 transition-colors ${
-      !n.read ? 'bg-blue-50/50' : ''
+    <div className={`px-4 py-3 hover:bg-gray-50 dark:hover:bg-slate-700/50 transition-colors ${
+      !n.read ? 'bg-blue-50/50 dark:bg-blue-900/20' : ''
     }`}>
       <div className="flex gap-3 items-start">
         <span className={`inline-flex items-center justify-center w-6 h-6 rounded-full text-[10px] font-bold text-white mt-0.5 shrink-0 bg-${icon}-500`}>
           {iconLabel.charAt(0)}
         </span>
         <div className="flex-1 min-w-0">
-          <p className="text-xs text-gray-800 leading-relaxed">{n.message}</p>
-          <p className="text-[11px] text-gray-400 mt-1">{timeAgo}</p>
+          <p className="text-xs text-gray-800 dark:text-slate-300 leading-relaxed">{n.message}</p>
+          <p className="text-[11px] text-gray-400 dark:text-slate-500 mt-1">{timeAgo}</p>
         </div>
         {!n.read && (
           <span className="w-2 h-2 rounded-full bg-blue-500 shrink-0 mt-1.5" />

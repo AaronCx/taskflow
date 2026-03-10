@@ -90,21 +90,22 @@ export function Profile() {
     }
   };
 
-  const inputClass = "w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent";
+  const inputClass = "w-full px-3 py-2 bg-white dark:bg-slate-900/50 border border-gray-300 dark:border-slate-600 rounded-lg text-sm text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 placeholder:text-slate-500";
 
   return (
     <Layout>
       <div className="max-w-2xl mx-auto space-y-8">
-        <h1 className="text-2xl font-bold text-gray-900">Profile Settings</h1>
+        <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Profile Settings</h1>
 
         {/* ── Profile Info ──────────────────────────────────────── */}
-        <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-8">
-          <h2 className="text-lg font-semibold text-gray-900 mb-4">Personal Information</h2>
+        <div className="bg-white dark:bg-slate-800/50 rounded-2xl border border-gray-200 dark:border-slate-700 shadow-sm p-8">
+          <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Personal Information</h2>
 
           {profileMsg && (
             <div className={`mb-4 p-3 rounded-lg text-sm ${
-              profileMsg.type === 'success' ? 'bg-green-50 text-green-700 border border-green-200'
-                : 'bg-red-50 text-red-700 border border-red-200'
+              profileMsg.type === 'success'
+                ? 'bg-green-50 dark:bg-green-900/30 text-green-700 dark:text-green-300 border border-green-200 dark:border-green-800'
+                : 'bg-red-50 dark:bg-red-900/30 text-red-700 dark:text-red-300 border border-red-200 dark:border-red-800'
             }`}>
               {profileMsg.text}
             </div>
@@ -113,7 +114,7 @@ export function Profile() {
           <form onSubmit={handleProfileSubmit} className="space-y-4">
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">First name</label>
+                <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">First name</label>
                 <input
                   type="text"
                   required
@@ -123,7 +124,7 @@ export function Profile() {
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Last name</label>
+                <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">Last name</label>
                 <input
                   type="text"
                   required
@@ -135,7 +136,7 @@ export function Profile() {
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Email address</label>
+              <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">Email address</label>
               <input
                 type="email"
                 required
@@ -149,7 +150,7 @@ export function Profile() {
               type="submit"
               disabled={profileSaving}
               className="py-2.5 px-6 bg-blue-600 text-white rounded-lg text-sm font-semibold
-                         hover:bg-blue-700 transition-colors disabled:opacity-60"
+                         hover:bg-blue-500 transition-colors disabled:opacity-60"
             >
               {profileSaving ? 'Saving...' : 'Save changes'}
             </button>
@@ -157,13 +158,14 @@ export function Profile() {
         </div>
 
         {/* ── Change Password ──────────────────────────────────── */}
-        <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-8">
-          <h2 className="text-lg font-semibold text-gray-900 mb-4">Change Password</h2>
+        <div className="bg-white dark:bg-slate-800/50 rounded-2xl border border-gray-200 dark:border-slate-700 shadow-sm p-8">
+          <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Change Password</h2>
 
           {passwordMsg && (
             <div className={`mb-4 p-3 rounded-lg text-sm ${
-              passwordMsg.type === 'success' ? 'bg-green-50 text-green-700 border border-green-200'
-                : 'bg-red-50 text-red-700 border border-red-200'
+              passwordMsg.type === 'success'
+                ? 'bg-green-50 dark:bg-green-900/30 text-green-700 dark:text-green-300 border border-green-200 dark:border-green-800'
+                : 'bg-red-50 dark:bg-red-900/30 text-red-700 dark:text-red-300 border border-red-200 dark:border-red-800'
             }`}>
               {passwordMsg.text}
             </div>
@@ -171,7 +173,7 @@ export function Profile() {
 
           <form onSubmit={handlePasswordSubmit} className="space-y-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Current password</label>
+              <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">Current password</label>
               <input
                 type="password"
                 required
@@ -183,7 +185,7 @@ export function Profile() {
 
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">New password</label>
+                <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">New password</label>
                 <input
                   type="password"
                   required
@@ -195,7 +197,7 @@ export function Profile() {
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Confirm new password</label>
+                <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">Confirm new password</label>
                 <input
                   type="password"
                   required
@@ -210,8 +212,8 @@ export function Profile() {
             <button
               type="submit"
               disabled={passwordSaving}
-              className="py-2.5 px-6 bg-gray-800 text-white rounded-lg text-sm font-semibold
-                         hover:bg-gray-900 transition-colors disabled:opacity-60"
+              className="py-2.5 px-6 bg-gray-800 dark:bg-slate-700 text-white rounded-lg text-sm font-semibold
+                         hover:bg-gray-900 dark:hover:bg-slate-600 transition-colors disabled:opacity-60"
             >
               {passwordSaving ? 'Changing...' : 'Change password'}
             </button>

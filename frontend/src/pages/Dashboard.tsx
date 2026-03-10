@@ -167,19 +167,19 @@ export function Dashboard() {
         <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white">
           Good {getGreeting()}, {user?.firstName}
         </h1>
-        <p className="mt-1 text-sm sm:text-base text-gray-500 dark:text-gray-400">Here's what's on your plate today.</p>
+        <p className="mt-1 text-sm sm:text-base text-gray-500 dark:text-slate-400">Here's what's on your plate today.</p>
       </div>
 
       {/* ── Stats row ──────────────────────────────────────────────── */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4 mb-6 sm:mb-8">
         {[
-          { label: 'Total',       value: stats.total,      color: 'text-gray-700',  bg: 'bg-gray-50'   },
-          { label: 'To Do',       value: stats.todo,       color: 'text-gray-600',  bg: 'bg-gray-50'   },
-          { label: 'In Progress', value: stats.inProgress, color: 'text-blue-700',  bg: 'bg-blue-50'   },
-          { label: 'Done',        value: stats.done,       color: 'text-green-700', bg: 'bg-green-50'  },
-        ].map(({ label, value, color, bg }) => (
-          <div key={label} className={`${bg} rounded-xl p-3 sm:p-4 border border-gray-100`}>
-            <p className="text-xs font-medium text-gray-500 uppercase tracking-wide">{label}</p>
+          { label: 'Total',       value: stats.total,      color: 'text-gray-700 dark:text-slate-200',  border: 'border-l-slate-400' },
+          { label: 'To Do',       value: stats.todo,       color: 'text-gray-600 dark:text-slate-300',  border: 'border-l-slate-500' },
+          { label: 'In Progress', value: stats.inProgress, color: 'text-blue-700 dark:text-blue-400',   border: 'border-l-blue-500' },
+          { label: 'Done',        value: stats.done,       color: 'text-green-700 dark:text-green-400', border: 'border-l-green-500' },
+        ].map(({ label, value, color, border }) => (
+          <div key={label} className={`bg-white dark:bg-slate-800/50 border border-gray-200 dark:border-slate-700 border-l-4 ${border} rounded-xl p-3 sm:p-4`}>
+            <p className="text-xs font-medium text-gray-500 dark:text-slate-400 uppercase tracking-wide">{label}</p>
             <p className={`text-2xl sm:text-3xl font-bold mt-1 ${color}`}>{value}</p>
           </div>
         ))}
@@ -189,7 +189,7 @@ export function Dashboard() {
       <div className="flex flex-col sm:flex-row gap-3 mb-6">
         {/* Search */}
         <div className="relative flex-1">
-          <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" fill="none"
+          <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 dark:text-slate-500" fill="none"
                viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
             <path strokeLinecap="round" strokeLinejoin="round"
                   d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
@@ -199,22 +199,23 @@ export function Dashboard() {
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder="Search tasks..."
-            className="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg text-sm
+            className="w-full pl-10 pr-3 py-2 bg-white dark:bg-slate-800/50 border border-gray-300 dark:border-slate-600
+                       rounded-lg text-sm text-gray-900 dark:text-white placeholder:text-slate-500
                        focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
           />
         </div>
 
         <div className="flex gap-2 sm:gap-3">
           {/* Status filter tabs */}
-          <div className="flex gap-1 bg-gray-100 p-1 rounded-lg overflow-x-auto">
+          <div className="flex gap-1 bg-gray-100 dark:bg-slate-800/50 p-1 rounded-lg overflow-x-auto">
             {STATUS_FILTERS.map(({ label, value }) => (
               <button
                 key={value}
                 onClick={() => setFilter(value)}
                 className={`px-3 sm:px-4 py-1.5 rounded-md text-sm font-medium transition-colors whitespace-nowrap ${
                   filter === value
-                    ? 'bg-white text-gray-900 shadow-sm'
-                    : 'text-gray-500 hover:text-gray-800'
+                    ? 'bg-white dark:bg-slate-700 text-gray-900 dark:text-white shadow-sm'
+                    : 'text-gray-500 dark:text-slate-400 hover:text-gray-800 dark:hover:text-white'
                 }`}
               >
                 {label}
@@ -226,7 +227,8 @@ export function Dashboard() {
           <select
             value={sortBy}
             onChange={(e) => setSortBy(e.target.value as SortKey)}
-            className="px-3 py-2 border border-gray-300 rounded-lg text-sm bg-white shrink-0
+            className="px-3 py-2 bg-white dark:bg-slate-800/50 border border-gray-300 dark:border-slate-600
+                       rounded-lg text-sm text-gray-900 dark:text-white shrink-0
                        focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
           >
             {SORT_OPTIONS.map(({ label, value }) => (
@@ -239,48 +241,48 @@ export function Dashboard() {
       {/* ── Bulk action bar ─────────────────────────────────────────── */}
       {sortedTasks.length > 0 && (
         <div className="flex items-center gap-3 mb-4">
-          <label className="flex items-center gap-2 text-sm text-gray-600 cursor-pointer">
+          <label className="flex items-center gap-2 text-sm text-gray-600 dark:text-slate-400 cursor-pointer">
             <input
               type="checkbox"
               checked={selectedIds.size === sortedTasks.length && sortedTasks.length > 0}
               onChange={toggleSelectAll}
-              className="w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+              className="w-4 h-4 rounded border-gray-300 dark:border-slate-600 text-blue-600 focus:ring-blue-500"
             />
             Select all
           </label>
           {selectedIds.size > 0 && (
             <>
-              <span className="text-xs text-gray-500">{selectedIds.size} selected</span>
+              <span className="text-xs text-gray-500 dark:text-slate-500">{selectedIds.size} selected</span>
               <div className="flex gap-1 ml-auto">
                 <button
                   onClick={() => handleBulkStatus('TODO')}
                   disabled={bulkLoading}
-                  className="px-3 py-1 text-xs font-medium rounded-lg border border-gray-300
-                             hover:bg-gray-50 disabled:opacity-50"
+                  className="px-3 py-1 text-xs font-medium rounded-lg border border-gray-300 dark:border-slate-600
+                             text-gray-700 dark:text-slate-300 hover:bg-gray-50 dark:hover:bg-slate-700 disabled:opacity-50"
                 >
                   To Do
                 </button>
                 <button
                   onClick={() => handleBulkStatus('IN_PROGRESS')}
                   disabled={bulkLoading}
-                  className="px-3 py-1 text-xs font-medium rounded-lg border border-blue-300
-                             text-blue-700 hover:bg-blue-50 disabled:opacity-50"
+                  className="px-3 py-1 text-xs font-medium rounded-lg border border-blue-300 dark:border-blue-800
+                             text-blue-700 dark:text-blue-300 hover:bg-blue-50 dark:hover:bg-blue-900/30 disabled:opacity-50"
                 >
                   In Progress
                 </button>
                 <button
                   onClick={() => handleBulkStatus('DONE')}
                   disabled={bulkLoading}
-                  className="px-3 py-1 text-xs font-medium rounded-lg border border-green-300
-                             text-green-700 hover:bg-green-50 disabled:opacity-50"
+                  className="px-3 py-1 text-xs font-medium rounded-lg border border-green-300 dark:border-green-800
+                             text-green-700 dark:text-green-300 hover:bg-green-50 dark:hover:bg-green-900/30 disabled:opacity-50"
                 >
                   Done
                 </button>
                 <button
                   onClick={handleBulkDelete}
                   disabled={bulkLoading}
-                  className="px-3 py-1 text-xs font-medium rounded-lg border border-red-300
-                             text-red-700 hover:bg-red-50 disabled:opacity-50"
+                  className="px-3 py-1 text-xs font-medium rounded-lg border border-red-300 dark:border-red-800
+                             text-red-700 dark:text-red-300 hover:bg-red-50 dark:hover:bg-red-900/30 disabled:opacity-50"
                 >
                   Delete
                 </button>
@@ -299,22 +301,22 @@ export function Dashboard() {
       )}
 
       {error && (
-        <div className="p-4 bg-red-50 text-red-700 rounded-lg text-sm">{error}</div>
+        <div className="p-4 bg-red-50 dark:bg-red-900/30 text-red-700 dark:text-red-300 border border-red-200 dark:border-red-800 rounded-lg text-sm">{error}</div>
       )}
 
       {!loading && !error && tasks.length === 0 && (
         <div className="text-center py-20">
-          <p className="mt-4 text-lg font-medium text-gray-600">
+          <p className="mt-4 text-lg font-medium text-gray-600 dark:text-slate-400">
             {debouncedSearch ? 'No tasks match your search' : 'No tasks yet'}
           </p>
-          <p className="text-sm text-gray-400 mt-1">
+          <p className="text-sm text-gray-400 dark:text-slate-500 mt-1">
             {debouncedSearch ? 'Try a different search term' : 'Create your first task to get started'}
           </p>
           {!debouncedSearch && (
             <Link
               to="/tasks/new"
               className="mt-4 inline-block bg-blue-600 text-white px-6 py-2 rounded-lg
-                         text-sm font-medium hover:bg-blue-700 transition-colors"
+                         text-sm font-medium hover:bg-blue-500 transition-colors"
             >
               Create task
             </Link>
@@ -359,8 +361,8 @@ function TaskCard({
     task.dueDate && task.status !== 'DONE' && new Date(task.dueDate) < new Date();
 
   return (
-    <div className={`bg-white dark:bg-gray-800 rounded-xl border p-4 sm:p-5 hover:shadow-sm transition-all group ${
-      selected ? 'border-blue-400 bg-blue-50/30 dark:bg-blue-900/20' : 'border-gray-200 dark:border-gray-700 hover:border-blue-300'
+    <div className={`bg-white dark:bg-slate-800/50 rounded-xl border p-4 sm:p-5 transition-all group ${
+      selected ? 'border-blue-400 bg-blue-50/30 dark:bg-blue-900/20' : 'border-gray-200 dark:border-slate-700 hover:border-gray-300 dark:hover:border-slate-600'
     }`}>
       <div className="flex items-start gap-3 sm:gap-4">
         {/* Checkbox */}
@@ -368,7 +370,7 @@ function TaskCard({
           type="checkbox"
           checked={selected}
           onChange={onToggleSelect}
-          className="mt-1 w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500 shrink-0"
+          className="mt-1 w-4 h-4 rounded border-gray-300 dark:border-slate-600 text-blue-600 focus:ring-blue-500 shrink-0"
         />
         {/* Content */}
         <div className="flex-1 min-w-0">
@@ -389,11 +391,11 @@ function TaskCard({
           </div>
 
           {task.description && (
-            <p className="mt-1 text-sm text-gray-500 line-clamp-2">{task.description}</p>
+            <p className="mt-1 text-sm text-gray-500 dark:text-slate-400 line-clamp-2">{task.description}</p>
           )}
 
           <div className="mt-2 flex items-center justify-between gap-2">
-            <div className="flex items-center gap-3 sm:gap-4 text-xs text-gray-400">
+            <div className="flex items-center gap-3 sm:gap-4 text-xs text-gray-400 dark:text-slate-500">
               {task.dueDate && (
                 <span className={isOverdue ? 'text-red-500 font-medium' : ''}>
                   {isOverdue ? 'Overdue: ' : 'Due: '}
@@ -409,16 +411,16 @@ function TaskCard({
             <div className="flex items-center gap-1.5 sm:gap-2 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity shrink-0">
               <Link
                 to={`/tasks/${task.id}`}
-                className="text-xs text-blue-600 hover:text-blue-800 font-medium px-2 sm:px-3 py-1 sm:py-1.5
-                           border border-blue-200 rounded-lg hover:bg-blue-50 transition-colors"
+                className="text-xs text-blue-600 dark:text-blue-500 hover:text-blue-800 dark:hover:text-blue-400 font-medium px-2 sm:px-3 py-1 sm:py-1.5
+                           border border-blue-200 dark:border-blue-800/50 rounded-lg hover:bg-blue-50 dark:hover:bg-blue-900/30 transition-colors"
               >
                 Edit
               </Link>
               <button
                 onClick={() => onDelete(task.id)}
                 disabled={isDeleting}
-                className="text-xs text-red-600 hover:text-red-800 font-medium px-2 sm:px-3 py-1 sm:py-1.5
-                           border border-red-200 rounded-lg hover:bg-red-50 transition-colors
+                className="text-xs text-red-600 dark:text-red-400 hover:text-red-800 dark:hover:text-red-300 font-medium px-2 sm:px-3 py-1 sm:py-1.5
+                           border border-red-200 dark:border-red-800/50 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/30 transition-colors
                            disabled:opacity-50"
               >
                 {isDeleting ? '...' : 'Delete'}

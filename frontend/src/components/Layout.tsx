@@ -19,29 +19,29 @@ export function Layout({ children }: { children: React.ReactNode }) {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 transition-colors">
+    <div className="min-h-screen bg-slate-50 dark:bg-slate-900 transition-colors">
       {/* ── Navigation bar ───────────────────────────────────────────── */}
-      <nav className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 shadow-sm">
+      <nav className="bg-white dark:bg-slate-900/80 backdrop-blur-lg border-b border-gray-200 dark:border-slate-800">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-14 sm:h-16">
             {/* Logo / brand */}
             <Link to="/dashboard" className="flex items-center gap-2 shrink-0">
               <span className="text-2xl">✅</span>
-              <span className="text-xl font-bold text-blue-600">TaskFlow</span>
+              <span className="text-xl font-bold text-blue-400">TaskFlow</span>
             </Link>
 
             {/* Desktop right side */}
             <div className="hidden sm:flex items-center gap-3">
               {user && (
-                <Link to="/profile" className="text-sm text-gray-600 hover:text-blue-600 transition-colors">
+                <Link to="/profile" className="text-sm text-gray-600 dark:text-slate-400 hover:text-blue-600 dark:hover:text-white transition-colors">
                   {user.firstName} {user.lastName}
                 </Link>
               )}
               <button
                 onClick={toggle}
                 aria-label="Toggle dark mode"
-                className="p-2 rounded-lg text-gray-500 hover:text-gray-800 dark:text-gray-400
-                           dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+                className="p-2 rounded-lg text-gray-500 dark:text-slate-400 hover:text-gray-800 dark:hover:text-white
+                           hover:bg-gray-100 dark:hover:bg-slate-800 transition-colors"
               >
                 {isDark ? (
                   <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
@@ -59,13 +59,13 @@ export function Layout({ children }: { children: React.ReactNode }) {
               <Link
                 to="/tasks/new"
                 className="bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-medium
-                           hover:bg-blue-700 transition-colors"
+                           hover:bg-blue-500 transition-colors"
               >
                 + New Task
               </Link>
               <button
                 onClick={handleLogout}
-                className="text-sm text-gray-500 hover:text-gray-800 transition-colors"
+                className="text-sm text-gray-500 dark:text-slate-500 hover:text-gray-800 dark:hover:text-white transition-colors"
               >
                 Log out
               </button>
@@ -76,7 +76,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
               <NotificationsDropdown />
               <Link
                 to="/tasks/new"
-                className="p-2 rounded-lg text-blue-600 hover:bg-blue-50 transition-colors"
+                className="p-2 rounded-lg text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-slate-800 transition-colors"
                 aria-label="New task"
               >
                 <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
@@ -86,7 +86,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
               <button
                 onClick={() => setMenuOpen(!menuOpen)}
                 aria-label="Toggle menu"
-                className="p-2 rounded-lg text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+                className="p-2 rounded-lg text-gray-500 dark:text-slate-400 hover:bg-gray-100 dark:hover:bg-slate-800 transition-colors"
               >
                 <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                   {menuOpen ? (
@@ -102,21 +102,21 @@ export function Layout({ children }: { children: React.ReactNode }) {
 
         {/* Mobile dropdown menu */}
         {menuOpen && (
-          <div className="sm:hidden border-t border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 px-4 py-3 space-y-2">
+          <div className="sm:hidden border-t border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-4 py-3 space-y-2">
             {user && (
               <Link
                 to="/profile"
                 onClick={() => setMenuOpen(false)}
                 className="block px-3 py-2 rounded-lg text-sm font-medium text-gray-700 dark:text-gray-200
-                           hover:bg-gray-100 dark:hover:bg-gray-700"
+                           hover:bg-gray-100 dark:hover:bg-slate-700"
               >
                 {user.firstName} {user.lastName}
               </Link>
             )}
             <button
               onClick={() => { toggle(); setMenuOpen(false); }}
-              className="w-full text-left px-3 py-2 rounded-lg text-sm text-gray-600 dark:text-gray-300
-                         hover:bg-gray-100 dark:hover:bg-gray-700"
+              className="w-full text-left px-3 py-2 rounded-lg text-sm text-gray-600 dark:text-slate-300
+                         hover:bg-gray-100 dark:hover:bg-slate-700"
             >
               {isDark ? 'Light mode' : 'Dark mode'}
             </button>

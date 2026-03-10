@@ -109,6 +109,9 @@ export function TaskDetail() {
     }
   };
 
+  const inputClass = "w-full px-3 py-2 bg-white dark:bg-slate-900/50 border border-gray-300 dark:border-slate-600 rounded-lg text-sm text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 placeholder:text-slate-500";
+  const selectClass = `${inputClass} appearance-auto`;
+
   // ── Render loading / error states ─────────────────────────────────
   if (loading) {
     return (
@@ -124,7 +127,7 @@ export function TaskDetail() {
   if (error && !isNew && !task) {
     return (
       <Layout>
-        <div className="p-4 bg-red-50 text-red-700 rounded-lg text-sm">{error}</div>
+        <div className="p-4 bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-800 text-red-700 dark:text-red-300 rounded-lg text-sm">{error}</div>
       </Layout>
     );
   }
@@ -135,18 +138,18 @@ export function TaskDetail() {
         {/* Back link */}
         <button
           onClick={() => navigate(-1)}
-          className="text-sm text-blue-600 hover:underline mb-6 flex items-center gap-1"
+          className="text-sm text-blue-600 dark:text-blue-400 hover:underline mb-6 flex items-center gap-1"
         >
           ← Back to dashboard
         </button>
 
-        <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-8">
-          <h1 className="text-2xl font-bold text-gray-900 mb-6">
+        <div className="bg-white dark:bg-slate-800/50 rounded-2xl border border-gray-200 dark:border-slate-700 shadow-sm p-8">
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-6">
             {isNew ? 'New Task' : 'Edit Task'}
           </h1>
 
           {error && (
-            <div className="mb-5 p-3 bg-red-50 border border-red-200 rounded-lg text-sm text-red-700">
+            <div className="mb-5 p-3 bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-800 rounded-lg text-sm text-red-700 dark:text-red-300">
               {error}
             </div>
           )}
@@ -154,7 +157,7 @@ export function TaskDetail() {
           <form onSubmit={handleSubmit} className="space-y-5">
             {/* Title */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">
                 Title <span className="text-red-500">*</span>
               </label>
               <input
@@ -163,23 +166,20 @@ export function TaskDetail() {
                 required
                 value={form.title}
                 onChange={handleChange}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm
-                           focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className={inputClass}
                 placeholder="What needs to be done?"
               />
             </div>
 
             {/* Description */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
+              <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">Description</label>
               <textarea
                 name="description"
                 rows={4}
                 value={form.description}
                 onChange={handleChange}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm
-                           focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent
-                           resize-none"
+                className={`${inputClass} resize-none`}
                 placeholder="Add more details (optional)..."
               />
             </div>
@@ -187,14 +187,12 @@ export function TaskDetail() {
             {/* Status + Priority */}
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Status</label>
+                <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">Status</label>
                 <select
                   name="status"
                   value={form.status}
                   onChange={handleChange}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm
-                             focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent
-                             bg-white"
+                  className={selectClass}
                 >
                   {(['TODO', 'IN_PROGRESS', 'DONE'] as TaskStatus[]).map((s) => (
                     <option key={s} value={s}>
@@ -205,14 +203,12 @@ export function TaskDetail() {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Priority</label>
+                <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">Priority</label>
                 <select
                   name="priority"
                   value={form.priority}
                   onChange={handleChange}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm
-                             focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent
-                             bg-white"
+                  className={selectClass}
                 >
                   {(['LOW', 'MEDIUM', 'HIGH'] as TaskPriority[]).map((p) => (
                     <option key={p} value={p}>
@@ -226,26 +222,23 @@ export function TaskDetail() {
             {/* Due date + Assignee */}
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Due date</label>
+                <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">Due date</label>
                 <input
                   name="dueDate"
                   type="date"
                   value={form.dueDate ?? ''}
                   onChange={handleChange}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm
-                             focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className={inputClass}
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Assign to</label>
+                <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">Assign to</label>
                 <select
                   name="assignedToId"
                   value={form.assignedToId ?? ''}
                   onChange={handleChange}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm
-                             focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent
-                             bg-white"
+                  className={selectClass}
                 >
                   <option value="">Unassigned</option>
                   {users.map((u) => (
@@ -259,14 +252,12 @@ export function TaskDetail() {
 
             {/* Category */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Category</label>
+              <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">Category</label>
               <select
                 name="categoryId"
                 value={form.categoryId ?? ''}
                 onChange={handleChange}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm
-                           focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent
-                           bg-white"
+                className={selectClass}
               >
                 <option value="">No category</option>
                 {categories.map((c) => (
@@ -283,15 +274,15 @@ export function TaskDetail() {
                 type="submit"
                 disabled={saving}
                 className="flex-1 py-2.5 bg-blue-600 text-white rounded-lg text-sm font-semibold
-                           hover:bg-blue-700 transition-colors disabled:opacity-60"
+                           hover:bg-blue-500 transition-colors disabled:opacity-60"
               >
                 {saving ? 'Saving...' : isNew ? 'Create task' : 'Save changes'}
               </button>
               <button
                 type="button"
                 onClick={() => navigate('/dashboard')}
-                className="px-6 py-2.5 border border-gray-300 text-gray-700 rounded-lg text-sm
-                           font-medium hover:bg-gray-50 transition-colors"
+                className="px-6 py-2.5 border border-gray-300 dark:border-slate-600 text-gray-700 dark:text-slate-300 rounded-lg text-sm
+                           font-medium hover:bg-gray-50 dark:hover:bg-slate-700 transition-colors"
               >
                 Cancel
               </button>

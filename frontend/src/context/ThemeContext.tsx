@@ -19,7 +19,7 @@ function getSystemPreference(): boolean {
 
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
   const [theme, setThemeState] = useState<Theme>(() => {
-    return (localStorage.getItem(THEME_KEY) as Theme) ?? 'system';
+    return (localStorage.getItem(THEME_KEY) as Theme) ?? 'dark';
   });
 
   const isDark = theme === 'dark' || (theme === 'system' && getSystemPreference());
