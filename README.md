@@ -18,7 +18,7 @@
 | **Message Bus** | Apache Kafka 3.5 (via Confluent images) + Zookeeper |
 | **Database** | PostgreSQL 15 (shared by both services) |
 | **API Docs** | Springdoc OpenAPI 3 / Swagger UI (both services) |
-| **Frontend** | React 18, TypeScript, Vite, Tailwind CSS |
+| **Frontend** | React 18, TypeScript, Vite, Tailwind CSS, Bun |
 | **HTTP Client** | Axios with in-memory JWT + notification polling |
 | **Routing** | React Router v6 with protected routes |
 | **DevOps** | Docker, Docker Compose, GitHub Actions CI |
@@ -159,7 +159,7 @@ Swagger UI: **http://localhost:8081/swagger-ui.html**
 
 - Java 17+
 - Maven 3.9+ (or use the included `./mvnw` wrapper)
-- Node.js 20+
+- [Bun](https://bun.sh/) (latest)
 - Docker & Docker Compose
 
 ### Option A — Docker Compose (recommended, full stack)
@@ -182,8 +182,8 @@ Then start the frontend separately:
 
 ```bash
 cd frontend
-npm install
-npm run dev
+bun install
+bun run dev
 # → http://localhost:5173
 ```
 
@@ -207,7 +207,7 @@ cd backend && ./mvnw spring-boot:run
 cd backend-notifications && ./mvnw spring-boot:run
 
 # React frontend (port 5173)
-cd frontend && npm install && npm run dev
+cd frontend && bun install && bun run dev
 ```
 
 ---
@@ -221,7 +221,7 @@ cd backend
 
 # Frontend type-check
 cd frontend
-npx tsc --noEmit
+bun run tsc --noEmit
 ```
 
 ---

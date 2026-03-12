@@ -55,34 +55,31 @@ jobs:
 
   # ── Frontend: Type-check + Build ─────────────────────────────────────────────
   frontend:
-    name: Frontend (Node 20 + Vite)
+    name: Frontend (Bun + Vite)
     runs-on: ubuntu-latest
 
     steps:
       - name: Checkout source
         uses: actions/checkout@v4
 
-      - name: Set up Node.js 20
-        uses: actions/setup-node@v4
-        with:
-          node-version: '20'
-          # No cache — avoids setup-node lockfile resolution issues on non-root package-lock.json
+      - name: Set up Bun
+        uses: oven-sh/setup-bun@v2
 
       - name: Install dependencies
         working-directory: ./frontend
-        run: npm ci
+        run: bun install
 
       - name: TypeScript type check
         working-directory: ./frontend
-        run: npx tsc --noEmit
+        run: bun run tsc --noEmit
 
       - name: Run tests
         working-directory: ./frontend
-        run: npm test
+        run: bun run test
 
       - name: Build for production
         working-directory: ./frontend
-        run: npm run build
+        run: bun run build
 
       - name: Upload build artifacts
         uses: actions/upload-artifact@v4
