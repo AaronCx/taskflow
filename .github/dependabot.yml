@@ -1,0 +1,38 @@
+version: 2
+updates:
+  - package-ecosystem: "npm"
+    directory: "/frontend"
+    schedule:
+      interval: "weekly"
+    groups:
+      frontend-npm:
+        patterns: ["*"]
+        update-types: ["minor", "patch"]
+  - package-ecosystem: "maven"
+    directories:
+      - "/backend"
+      - "/backend-notifications"
+    schedule:
+      interval: "weekly"
+    groups:
+      maven:
+        patterns: ["*"]
+        update-types: ["minor", "patch"]
+  - package-ecosystem: "docker"
+    directories:
+      - "/backend"
+      - "/backend-notifications"
+    schedule:
+      interval: "weekly"
+    groups:
+      docker:
+        patterns: ["*"]
+        update-types: ["minor", "patch"]
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    groups:
+      actions:
+        patterns: ["*"]
+        update-types: ["minor", "patch"]
