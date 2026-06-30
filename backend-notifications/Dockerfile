@@ -10,7 +10,7 @@ COPY src/ src/
 RUN mvn package -DskipTests -q
 
 # ── Stage 2: Runtime ──────────────────────────────────────────────────────────
-FROM eclipse-temurin:17-jre-alpine AS runtime
+FROM eclipse-temurin:25-jre-alpine AS runtime
 
 RUN addgroup -S spring && adduser -S spring -G spring
 USER spring:spring
